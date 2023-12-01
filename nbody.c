@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
+#include <cuda_runtime.h>
 #include "vector.h"
 #include "config.h"
 #include "planets.h"
@@ -11,6 +12,10 @@
 vector3 *hVel, *d_hVel;
 vector3 *hPos, *d_hPos;
 double *mass;
+vector3 *hVel_p;
+vector3 *hPos_p;
+double *mass_p;
+
 
 //initHostMemory: Create storage for numObjects entities in our system
 //Parameters: numObjects: number of objects to allocate
@@ -21,6 +26,11 @@ void initHostMemory(int numObjects)
 	hVel = (vector3 *)malloc(sizeof(vector3) * numObjects);
 	hPos = (vector3 *)malloc(sizeof(vector3) * numObjects);
 	mass = (double *)malloc(sizeof(double) * numObjects);
+	
+
+	cudaMalloc((void**)&hVel_p, (sizeof(vector3) * numObjects));	
+	cudaMalloc((void**)&hPos_p, (sizeof(vector3) * numObjects));	
+	cudaMalloc((void**)&mass_p, (sizeof(double) * numObjects));	
 }
 
 //freeHostMemory: Free storage allocated by a previous call to initHostMemory
@@ -32,6 +42,10 @@ void freeHostMemory()
 	free(hVel);
 	free(hPos);
 	free(mass);
+
+	free(hVel_p);
+	free(hPos_p);
+	free(mass_p);
 }
 
 //planetFill: Fill the first NUMPLANETS+1 entries of the entity arrays with an estimation

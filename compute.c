@@ -9,12 +9,17 @@
 //Side Effect: Modifies the hPos and hVel arrays with the new positions and accelerations after 1 INTERVAL
 void compute(){
 	//make an acceleration matrix which is NUMENTITIES squared in size;
+	// values is 1d array and accels is 2d array
+	// values is a pointer to start of an array and accels is a pointer to the pointer of values?
+	// need both on device memory or maybe redo into one memory allocation
 	int i,j,k;
 	vector3* values=(vector3*)malloc(sizeof(vector3)*NUMENTITIES*NUMENTITIES);
 	vector3** accels=(vector3**)malloc(sizeof(vector3*)*NUMENTITIES);
 	for (i=0;i<NUMENTITIES;i++)
 		accels[i]=&values[i*NUMENTITIES];
-	//first compute the pairwise accelerations.  Effect is on the first argument.
+
+	// first compute the pairwise accelerations.  Effect is on the first argument.
+	// want to make a kernal call here?
 	for (i=0;i<NUMENTITIES;i++){
 		for (j=0;j<NUMENTITIES;j++){
 			if (i==j) {
@@ -30,7 +35,9 @@ void compute(){
 			}
 		}
 	}
-	//sum up the rows of our matrix to get effect on each entity, then update velocity and position.
+
+	// sum up the rows of our matrix to get effect on each entity, then update velocity and position.
+	// want to make kernal call here?
 	for (i=0;i<NUMENTITIES;i++){
 		vector3 accel_sum={0,0,0};
 		for (j=0;j<NUMENTITIES;j++){
