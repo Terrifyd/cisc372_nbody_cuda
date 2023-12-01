@@ -12,6 +12,8 @@ void compute(){
 	// values is 1d array and accels is 2d array
 	// values is a pointer to start of an array and accels is a pointer to the pointer of values?
 	// need both on device memory or maybe redo into one memory allocation
+	// accels is the array that matters, it is a 2d array of vectors and each vector has 3 elements
+	// accels[i][j][k] points to element [k] of the vector at [i][j]
 	int i,j,k;
 	vector3* values=(vector3*)malloc(sizeof(vector3)*NUMENTITIES*NUMENTITIES);
 	vector3** accels=(vector3**)malloc(sizeof(vector3*)*NUMENTITIES);

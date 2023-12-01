@@ -15,6 +15,8 @@ double *mass;
 vector3 *hVel_p;
 vector3 *hPos_p;
 double *mass_p;
+vector3* values_p;
+vector3** accels_p;
 
 
 //initHostMemory: Create storage for numObjects entities in our system
@@ -30,7 +32,10 @@ void initHostMemory(int numObjects)
 
 	cudaMalloc((void**)&hVel_p, (sizeof(vector3) * numObjects));	
 	cudaMalloc((void**)&hPos_p, (sizeof(vector3) * numObjects));	
-	cudaMalloc((void**)&mass_p, (sizeof(double) * numObjects));	
+	cudaMalloc((void**)&mass_p, (sizeof(double) * numObjects));
+
+	cudaMalloc((void**)&values_p, (sizeof(vector3) * NUMENTITIES * NUMENTITIES));
+	cudaMalloc((void**)&accels_p, (sizeof(vector3) * NUMENTITIES * NUMENTITIES));	
 }
 
 //freeHostMemory: Free storage allocated by a previous call to initHostMemory
@@ -46,7 +51,11 @@ void freeHostMemory()
 	free(hVel_p);
 	free(hPos_p);
 	free(mass_p);
+	
+	free(values_p);
+	free(accels_p);
 }
+
 
 //planetFill: Fill the first NUMPLANETS+1 entries of the entity arrays with an estimation
 //				of our solar system (Sun+NUMPLANETS)
