@@ -1,7 +1,28 @@
 #include <stdlib.h>
 #include <math.h>
+#include <stdio.h>
+#include <cuda_runtime.h>
 #include "vector.h"
 #include "config.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+__global__ void cuda_compute(int n) {
+	int thread_x = blockDim.x;
+	int thread_y = threadIdx.y;
+	
+	if (thread_x == 1 && thread_y == 1) {
+		printf("--n is %i\n", n);
+	}
+	
+	printf("thread (%i, %i)", thread_x, thread_y);
+}
+
+#ifdef __cplusplus
+}
+#endif
 
 //compute: Updates the positions and locations of the objects in the system based on gravity.
 //Parameters: None
@@ -56,3 +77,5 @@ void compute(){
 	free(accels);
 	free(values);
 }
+
+

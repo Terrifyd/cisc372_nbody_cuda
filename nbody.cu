@@ -8,6 +8,7 @@
 #include "planets.h"
 #include "compute.h"
 
+
 // represents the objects in the system.  Global variables
 vector3 *hVel, *d_hVel;
 vector3 *hPos, *d_hPos;
@@ -112,6 +113,10 @@ void printSystem(FILE* handle){
 	}
 }
 
+__global__ void cuda_test() {
+	printf("thread working\n");
+}
+
 int main(int argc, char **argv)
 {
 	clock_t t0=clock();
@@ -126,8 +131,20 @@ int main(int argc, char **argv)
 	printSystem(stdout);
 	#endif
 	for (t_now=0;t_now<DURATION;t_now+=INTERVAL){
-		compute();
+		//compute();
 	}
+
+	int one = 1;
+	dim3 dimGrid, dimBlock;
+	dimGrid.x = 1;
+	dimGrid.y = 1;
+	dimGrid.z = 1;
+	dimBlock.x = 32;
+	dimBlock.y = 32;
+	dimBlock.z = 1;
+	//cuda_compute<<<dimGrid, dimBlock>>>(4);	
+	cuda_test<<<1, 256>>>();
+
 	clock_t t1=clock()-t0;
 #ifdef DEBUG
 	printSystem(stdout);
@@ -136,3 +153,5 @@ int main(int argc, char **argv)
 
 	freeHostMemory();
 }
+
+
