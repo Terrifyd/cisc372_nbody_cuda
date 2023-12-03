@@ -113,10 +113,11 @@ void printSystem(FILE* handle){
 	}
 }
 
-__global__ void cuda_test(int* hostArray) {
+__global__ void cuda_test(int* deviceArray) {
 	int thread_x = threadIdx.x;
 	printf("thread %d working\n", thread_x);
-	hostArray[thread_x] = thread_x;
+	deviceArray[thread_x] = deviceArray[thread_x] * 2;
+	printf("thread %d placed %d in deviceArray\n", thread_x, deviceArray[thread_x]);
 }
 
 int main(int argc, char **argv)
@@ -145,6 +146,46 @@ int main(int argc, char **argv)
 	dimBlock.y = 32;
 	dimBlock.z = 1;
 	//cuda_compute<<<dimGrid, dimBlock>>>(4);	
+	
+	printf("start test\n");
+	int* h_arr;
+	int* d_arr;
+
+	h_arr = (int*)malloc(20 * sizeof(int));
+	for (int i=0; i < 20; i++) {
+		h_arr[i] = i;
+	}
+	
+	cudaMalloc((void**)&d_arr, 20 * sizeof(int));
+	cudaError_t cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
+	}
+
+	cudaMemcpy(d_arr, h_arr, 20 * sizeof(int), cudaMemcpyHostToDevice);
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
+	}
+
+	cuda_test<<<1,20>>>(d_arr);
+	
+	cudaMemcpy(h_arr, d_arr, 20 * sizeof(int), cudaMemcpyDeviceToHost);
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
+	}
+
+	for (int i = 0; i < 20; i++) {
+		printf("Post kernal value at h_arr[%d] is %d\n", i, h_arr[i]);
+	}
+
+	free(h_arr);
+	cudaFree(d_arr);
+
+	printf("done test\n");		
+	return 0;
+/*
 	size_t size_c = 256 * sizeof(int);
 	int size = 256 * sizeof(int);
 	//int *hostArray = new int[10];
@@ -161,6 +202,7 @@ int main(int argc, char **argv)
 	hostArray[0] = 1;
 	printf("~~~Host has %d at 0~~~\n", hostArray[0]);	
 	cuda_test<<<1, 256>>>(deviceArray);
+	cudaDeviceSynchronize();
 	
 	printf("before memcpy\n");
 	cudaMemcpy(hostArray, deviceArray, size_c, cudaMemcpyDeviceToHost);
@@ -170,6 +212,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
 	}
 	printf("~~~Host recived %d at 0~~~\n", hostArray[0]);	
+*/
 
 	clock_t t1=clock()-t0;
 #ifdef DEBUG
