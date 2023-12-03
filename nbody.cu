@@ -113,8 +113,10 @@ void printSystem(FILE* handle){
 	}
 }
 
-__global__ void cuda_test() {
-	printf("thread working\n");
+__global__ void cuda_test(int* hostArray) {
+	int thread_x = threadIdx.x;
+	printf("thread %d working\n", thread_x);
+	hostArray[thread_x] = thread_x;
 }
 
 int main(int argc, char **argv)
@@ -128,7 +130,7 @@ int main(int argc, char **argv)
 	randomFill(NUMPLANETS + 1, NUMASTEROIDS);
 	//now we have a system.
 	#ifdef DEBUG
-	printSystem(stdout);
+	//printSystem(stdout);
 	#endif
 	for (t_now=0;t_now<DURATION;t_now+=INTERVAL){
 		//compute();
@@ -143,11 +145,35 @@ int main(int argc, char **argv)
 	dimBlock.y = 32;
 	dimBlock.z = 1;
 	//cuda_compute<<<dimGrid, dimBlock>>>(4);	
-	cuda_test<<<1, 256>>>();
+	size_t size_c = 256 * sizeof(int);
+	int size = 256 * sizeof(int);
+	//int *hostArray = new int[10];
+	int* hostArray = (int*)malloc(2 * size);
+
+	int* deviceArray;
+	cudaMalloc((void**)&deviceArray, size_c);
+	cudaError_t cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
+	}
+
+
+	hostArray[0] = 1;
+	printf("~~~Host has %d at 0~~~\n", hostArray[0]);	
+	cuda_test<<<1, 256>>>(deviceArray);
+	
+	printf("before memcpy\n");
+	cudaMemcpy(hostArray, deviceArray, size_c, cudaMemcpyDeviceToHost);
+	printf("after memcpy\n");
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
+	}
+	printf("~~~Host recived %d at 0~~~\n", hostArray[0]);	
 
 	clock_t t1=clock()-t0;
 #ifdef DEBUG
-	printSystem(stdout);
+	//printSystem(stdout);
 #endif
 	printf("This took a total time of %f seconds\n",(double)t1/CLOCKS_PER_SEC);
 
