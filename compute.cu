@@ -52,10 +52,13 @@ void compute(){
 	// accels is the array that matters, it is a 2d array of vectors and each vector has 3 elements
 	// accels[i][j][k] points to element [k] of the vector at [i][j]
 	int i,j,k;
+	
+/*
 	vector3* values=(vector3*)malloc(sizeof(vector3)*NUMENTITIES*NUMENTITIES);
 	vector3** accels=(vector3**)malloc(sizeof(vector3*)*NUMENTITIES);
 	for (i=0;i<NUMENTITIES;i++)
 		accels[i]=&values[i*NUMENTITIES];
+*/
 
 	// first compute the pairwise accelerations.  Effect is on the first argument.
 	// want to make a kernal call here?
@@ -90,8 +93,8 @@ void compute(){
 			hPos[i][k]+=hVel[i][k]*INTERVAL;
 		}
 	}
-	free(accels);
-	free(values);
+	//free(accels);
+	//free(values);
 }
 
 

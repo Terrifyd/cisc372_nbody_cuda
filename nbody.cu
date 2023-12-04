@@ -13,9 +13,11 @@
 vector3 *hVel, *d_hVel;
 vector3 *hPos, *d_hPos;
 double *mass;
-vector3 *hVel_d;
-vector3 *hPos_d;
-double *mass_d;
+vector3* values;
+vector3** accels;
+vector3* hVel_d;
+vector3* hPos_d;
+double* mass_d;
 vector3* values_d;
 vector3** accels_d;
 
@@ -57,12 +59,12 @@ void freeHostMemory()
 	free(values);
 	free(accels);
 
-	cudaFree(hVel_p);
-	cudaFree(hPos_p);
-	cudaFree(mass_p);
+	cudaFree(hVel_d);
+	cudaFree(hPos_d);
+	cudaFree(mass_d);
 	
-	cudaFree(values_p);
-	cudaFree(accels_p);
+	cudaFree(values_d);
+	cudaFree(accels_d);
 }
 
 
@@ -142,7 +144,7 @@ int main(int argc, char **argv)
 	//printSystem(stdout);
 	#endif
 	for (t_now=0;t_now<DURATION;t_now+=INTERVAL){
-		//compute();
+		compute();
 	}
 
 
