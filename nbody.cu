@@ -37,10 +37,22 @@ void initHostMemory(int numObjects)
 	for (int i = 0; i < numObjects; i++) {
 		accels[i] = &values[i * numObjects];
 	}
-	
-	cudaMalloc((void**)&hVel_d, (sizeof(vector3) * numObjects));	
-	cudaMalloc((void**)&hPos_d, (sizeof(vector3) * numObjects));	
-	cudaMalloc((void**)&mass_d, (sizeof(double) * numObjects));
+	cudaError_t cudaStatus;
+	cudaStatus = cudaMalloc((void**)&hVel_d, (sizeof(vector3) * numObjects));	
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
+	}
+	else {printf("malloc success\n");}
+
+	cudaStatus = cudaMalloc((void**)&hPos_d, (sizeof(vector3) * numObjects));	
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
+	}
+
+	cudaStatus = cudaMalloc((void**)&mass_d, (sizeof(double) * numObjects));
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
+	}
 
 	cudaMalloc((void**)&values_d, (sizeof(vector3) * numObjects * numObjects));
 	cudaMalloc((void**)&accels_d, (sizeof(vector3*) * numObjects));	
@@ -167,8 +179,8 @@ int main(int argc, char **argv)
 	//now we have a system.
 
 	cudaError_t cudaStatus;
-	cudaMemcpy(hPos_d, hPos, sizeof(vector3) * NUMENTITIES, cudaMemcpyHostToDevice);
-	cudaStatus = cudaGetLastError();
+	cudaStatus = cudaMemcpy(hPos_d, hPos, sizeof(vector3) * NUMENTITIES, cudaMemcpyHostToDevice);
+	//cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
 	}
