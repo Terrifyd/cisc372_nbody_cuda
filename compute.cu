@@ -6,22 +6,38 @@
 #include "config.h"
 
 #ifdef __cplusplus
-extern "C" {
+//extern "C" {
 #endif
 
-__global__ void cuda_compute(int n) {
-	int thread_x = blockDim.x;
-	int thread_y = threadIdx.y;
+//cuda_compute: Calculates the accels of object in the system on the gpu using cuda
+//Parameters:
+//	vector3* hVel_d - pointer to an array on the device that holds vector3's for each objects velocity
+//	vector3* hPos_d - pointer to an array on the device that holds vector3's for each objects position
+//	double* mass_d - pointer to an array on the device that holds the mass of each object
+//	vector3** accels_d - a pointer to a 2D array on the device that will be used to store the pairwise acceleration 
+//		of each object
+//Returns: none 
+//Side Effect: modifies the hVel_d and hPos_d arrays with new velocities and positions after 1 interval
+__global__ void cuda_compute(vector3* hVel_d,
+		vector3* hPos_d,
+		double* mass_d,
+		vector3** accels_d, 
+		int n) {
+	//int thread_x = threadIdx.x;
+	//int thread_y = threadIdx.y;
+	//printf("thread (%i, %i)", thread_x, thread_x);
+	//d_arr[thread_x] = d_arr[thread_x] * n;
+
 	
-	if (thread_x == 1 && thread_y == 1) {
-		printf("--n is %i\n", n);
-	}
 	
-	printf("thread (%i, %i)", thread_x, thread_y);
+}
+
+void nothing_test() {
+	printf("HELLO");
 }
 
 #ifdef __cplusplus
-}
+//}
 #endif
 
 //compute: Updates the positions and locations of the objects in the system based on gravity.

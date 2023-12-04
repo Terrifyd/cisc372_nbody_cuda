@@ -13,11 +13,11 @@
 vector3 *hVel, *d_hVel;
 vector3 *hPos, *d_hPos;
 double *mass;
-vector3 *hVel_p;
-vector3 *hPos_p;
-double *mass_p;
-vector3* values_p;
-vector3** accels_p;
+vector3 *hVel_d;
+vector3 *hPos_d;
+double *mass_d;
+vector3* values_d;
+vector3** accels_d;
 
 
 //initHostMemory: Create storage for numObjects entities in our system
@@ -30,13 +30,18 @@ void initHostMemory(int numObjects)
 	hPos = (vector3 *)malloc(sizeof(vector3) * numObjects);
 	mass = (double *)malloc(sizeof(double) * numObjects);
 	
+	values = (vector3*)malloc(sizeof(vector3) * numObjects * numObjects);
+	accels = (vector3**)malloc(sizeof(vector3*) * numObjects);
+	for (int i = 0; i < numObjects; i++) {
+		accels[i] = &values[i * numObjects];
+	}
+	
+	cudaMalloc((void**)&hVel_d, (sizeof(vector3) * numObjects));	
+	cudaMalloc((void**)&hPos_d, (sizeof(vector3) * numObjects));	
+	cudaMalloc((void**)&mass_d, (sizeof(double) * numObjects));
 
-	cudaMalloc((void**)&hVel_p, (sizeof(vector3) * numObjects));	
-	cudaMalloc((void**)&hPos_p, (sizeof(vector3) * numObjects));	
-	cudaMalloc((void**)&mass_p, (sizeof(double) * numObjects));
-
-	cudaMalloc((void**)&values_p, (sizeof(vector3) * NUMENTITIES * NUMENTITIES));
-	cudaMalloc((void**)&accels_p, (sizeof(vector3) * NUMENTITIES * NUMENTITIES));	
+	cudaMalloc((void**)&values_d, (sizeof(vector3) * numObjects * numObjects));
+	cudaMalloc((void**)&accels_d, (sizeof(vector3*) * numObjects));	
 }
 
 //freeHostMemory: Free storage allocated by a previous call to initHostMemory
@@ -48,13 +53,16 @@ void freeHostMemory()
 	free(hVel);
 	free(hPos);
 	free(mass);
-
-	free(hVel_p);
-	free(hPos_p);
-	free(mass_p);
 	
-	free(values_p);
-	free(accels_p);
+	free(values);
+	free(accels);
+
+	cudaFree(hVel_p);
+	cudaFree(hPos_p);
+	cudaFree(mass_p);
+	
+	cudaFree(values_p);
+	cudaFree(accels_p);
 }
 
 
@@ -137,6 +145,8 @@ int main(int argc, char **argv)
 		//compute();
 	}
 
+
+/*
 	int one = 1;
 	dim3 dimGrid, dimBlock;
 	dimGrid.x = 1;
@@ -168,8 +178,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
 	}
 
-	cuda_test<<<1,20>>>(d_arr);
-	
+	cuda_compute<<<1,20>>>(d_arr, 4);
+	//nothing_test();
+
 	cudaMemcpy(h_arr, d_arr, 20 * sizeof(int), cudaMemcpyDeviceToHost);
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess) {
@@ -185,6 +196,8 @@ int main(int argc, char **argv)
 
 	printf("done test\n");		
 	return 0;
+*/
+
 /*
 	size_t size_c = 256 * sizeof(int);
 	int size = 256 * sizeof(int);
