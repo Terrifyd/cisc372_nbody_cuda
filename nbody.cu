@@ -44,6 +44,7 @@ void initHostMemory(int numObjects)
 
 	cudaMalloc((void**)&values_d, (sizeof(vector3) * numObjects * numObjects));
 	cudaMalloc((void**)&accels_d, (sizeof(vector3*) * numObjects));	
+	cuda_init_accels<<<1, 1>>>(values_d, accels_d, numObjects);
 }
 
 //freeHostMemory: Free storage allocated by a previous call to initHostMemory
@@ -123,6 +124,29 @@ void printSystem(FILE* handle){
 	}
 }
 
+void copy_to_device(int numObjects) {
+	cudaError_t cudaStatus;
+
+	cudaMemcpy(hVel_d, hVel, sizeof(vector3) * numObjects, cudaMemcpyHostToDevice);
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
+	}
+
+	cudaMemcpy(hPos_d, hPos, sizeof(vector3) * numObjects, cudaMemcpyHostToDevice);
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
+	}
+
+	cudaMemcpy(mass_d, mass, sizeof(double) * numObjects, cudaMemcpyHostToDevice);
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
+	}
+
+}
+
 __global__ void cuda_test(int* deviceArray) {
 	int thread_x = threadIdx.x;
 	printf("thread %d working\n", thread_x);
@@ -139,7 +163,20 @@ int main(int argc, char **argv)
 	initHostMemory(NUMENTITIES);
 	planetFill();
 	randomFill(NUMPLANETS + 1, NUMASTEROIDS);
+	printf("hPos[0,0] holds %f\n",hPos[0,0]); 
 	//now we have a system.
+
+	cudaError_t cudaStatus;
+	cudaMemcpy(hPos_d, hPos, sizeof(vector3) * NUMENTITIES, cudaMemcpyHostToDevice);
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
+	}
+
+	//copy_to_device(NUMENTITIES);
+
+	cuda_compute<<<1, 1>>>(hVel_d, hPos_d, mass_d, accels_d, 4);
+
 	#ifdef DEBUG
 	//printSystem(stdout);
 	#endif

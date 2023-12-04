@@ -27,10 +27,17 @@ __global__ void cuda_compute(vector3* hVel_d,
 	//int thread_y = threadIdx.y;
 	//printf("thread (%i, %i)", thread_x, thread_x);
 	//d_arr[thread_x] = d_arr[thread_x] * n;
-
+	printf("TEST\n");	
+	printf("hPos_d[0,0] holds %f\n", hPos_d[0][0]);
 	
 	
 }
+
+__global__ void cuda_init_accels(vector3* values_d, vector3** accels_d, int numObjects) {
+	for (int i = 0; i < numObjects; i++) {
+		accels_d[i] = &values_d[i * numObjects];
+	}
+}	
 
 void nothing_test() {
 	printf("HELLO");
