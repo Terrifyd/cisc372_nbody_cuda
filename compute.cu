@@ -62,6 +62,7 @@ __global__ void cuda_compute(vector3* hVel_d,
 					accelmag*distance[0]/magnitude,
 					accelmag*distance[1]/magnitude,
 					accelmag*distance[2]/magnitude);
+/*
 				if (i < 10 && j < 10) {
 					printf("accels_d[%d][%d] = (%lf,%lf,%lf)\n", 
 						i, 
@@ -70,6 +71,7 @@ __global__ void cuda_compute(vector3* hVel_d,
 						accels_d[i][j][1], 
 						accels_d[i][j][2]);
 				}	
+*/
 			}
 		}
 	}
@@ -82,8 +84,24 @@ __global__ void cuda_init_accels(vector3* values_d, vector3** accels_d, int numO
 	}
 }	
 
-void nothing_test() {
-	printf("HELLO");
+// serial summation for testing
+void summation(vector3* hVel, vector3* hPos, vector3** accels) {
+	// sum up the rows of our matrix to get effect on each entity, then update velocity and position.
+	// want to make kernal call here?
+	for (i=0;i<NUMENTITIES;i++){
+		vector3 accel_sum={0,0,0};
+		// sum up column
+		for (j=0;j<NUMENTITIES;j++){
+			for (k=0;k<3;k++)
+				accel_sum[k]+=accels[i][j][k];
+		}
+		//compute the new velocity based on the acceleration and time interval
+		//compute the new position based on the velocity and time interval
+		for (k=0;k<3;k++){
+			hVel[i][k]+=accel_sum[k]*INTERVAL;
+			hPos[i][k]+=hVel[i][k]*INTERVAL;
+		}
+	}
 }
 
 #ifdef __cplusplus
@@ -124,6 +142,7 @@ void compute(){
 				double magnitude=sqrt(magnitude_sq);
 				double accelmag=-1*GRAV_CONSTANT*mass[j]/magnitude_sq;
 				FILL_VECTOR(accels[i][j],accelmag*distance[0]/magnitude,accelmag*distance[1]/magnitude,accelmag*distance[2]/magnitude);
+/*
 				if (i < 10 && j < 10) {
 					printf("accels[%d][%d] = (%lf,%lf,%lf)\n", 
 						i, 
@@ -132,6 +151,7 @@ void compute(){
 						accels[i][j][1], 
 						accels[i][j][2]);
 				}	
+*/
 			}
 		}
 	}
