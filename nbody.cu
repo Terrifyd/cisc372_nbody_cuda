@@ -43,7 +43,6 @@ void initHostMemory(int numObjects)
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
 	}
-	else {printf("malloc success\n");}
 
 	cudaStatus = cudaMalloc((void**)&hPos_d, (sizeof(vector3) * numObjects));	
 	if (cudaStatus != cudaSuccess) {
@@ -176,17 +175,13 @@ int main(int argc, char **argv)
 	initHostMemory(NUMENTITIES);
 	planetFill();
 	randomFill(NUMPLANETS + 1, NUMASTEROIDS);
-	printf("hPos[0,0] holds %f\n",hPos[0,0]); 
+	printf("hPos[1][0] holds %lf\n",hPos[1][0]); 
 	//now we have a system.
 
 	cudaError_t cudaStatus;
-	cudaStatus = cudaMemcpy(hPos_d, hPos, sizeof(vector3) * NUMENTITIES, cudaMemcpyHostToDevice);
-	//cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
-	}
+	//cudaStatus = cudaMemcpy(hPos_d, hPos, sizeof(vector3) * NUMENTITIES, cudaMemcpyHostToDevice);
 
-	//copy_to_device(NUMENTITIES);
+	copy_to_device(NUMENTITIES);
 
 	cuda_compute<<<1, 1>>>(hVel_d, hPos_d, mass_d, accels_d, 4);
 

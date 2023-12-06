@@ -28,10 +28,11 @@ __global__ void cuda_compute(vector3* hVel_d,
 	//int thread_y = threadIdx.y;
 	//printf("thread (%i, %i)", thread_x, thread_x);
 	//d_arr[thread_x] = d_arr[thread_x] * n;
-	printf("TEST\n");	
-	printf("hPos_d[0,0] holds %f\n", hPos_d[0][0]);
-	
-	
+	//printf("TEST\n");	
+	printf("hPos_d[1][0] holds %lf\n", hPos_d[1][0]);
+	FILL_VECTOR(accels_d[0][0], 1.0, 2.0, 3.0);
+	printf("%lf\n", accels_d[0][0][2]);	
+	printf("%d", NUMENTITIES);	
 }
 
 __global__ void cuda_init_accels(vector3* values_d, vector3** accels_d, int numObjects) {
