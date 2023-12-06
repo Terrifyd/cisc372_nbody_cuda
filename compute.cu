@@ -17,6 +17,8 @@
 //	double* mass_d - pointer to an array on the device that holds the mass of each object
 //	vector3** accels_d - a pointer to a 2D array on the device that will be used to store the pairwise acceleration 
 //		of each object
+//	int n - dimmensions of the section of accels_d that each thread will compute, for example if n is 3 then each thread
+//		will calculate a 3x3 box of the accels_d matrix. Each thread does nxn computations 
 //Returns: none 
 //Side Effect: modifies the hVel_d and hPos_d arrays with new velocities and positions after 1 interval
 __global__ void cuda_compute(vector3* hVel_d,
@@ -34,15 +36,23 @@ __global__ void cuda_compute(vector3* hVel_d,
 	//printf("%lf\n", accels_d[0][0][2]);	
 	//printf("%d", NUMENTITIES);	
 	
+	int x = threadIdx.x; // x coordinate of thread
+	int y = threadIdx.y; // y coordinate of threa
+	int start_x = x * n;
+	int start_y = y * n;	
+
 	int i,j,k;
+	i = start_x;
+	j = start_y;
 	// first compute the pairwise accelerations.  Effect is on the first argument.
 	// want to make a kernal call here?
-	for (i=0;i<NUMENTITIES;i++){
-		for (j=0;j<NUMENTITIES;j++){
-			if (i==j) {
+	if (x == 0 && y == 0) {printf("~~~ n=%d, i=%d, j=%d\n", n, i, j);} 
+	for (i; i < (start_x + n); i++){
+		for (j; j < (start_y + n); j++){
+			if (i==j && i < NUMENTITIES && j < NUMENTITIES) {
 				FILL_VECTOR(accels_d[i][j],0,0,0);
 			}
-			else{
+			else if(i < NUMENTITIES && j < NUMENTITIES) {
 				vector3 distance;
 				for (k=0;k<3;k++) distance[k]=hPos_d[i][k]-hPos_d[j][k];
 				double magnitude_sq=distance[0]*distance[0]+distance[1]*distance[1]+distance[2]*distance[2];
@@ -58,7 +68,7 @@ __global__ void cuda_compute(vector3* hVel_d,
 						j, 
 						accels_d[i][j][0], 
 						accels_d[i][j][1], 
-						accels_d[i][i][2]);
+						accels_d[i][j][2]);
 				}	
 			}
 		}
@@ -120,7 +130,7 @@ void compute(){
 						j, 
 						accels[i][j][0], 
 						accels[i][j][1], 
-						accels[i][i][2]);
+						accels[i][j][2]);
 				}	
 			}
 		}

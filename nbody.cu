@@ -182,8 +182,11 @@ int main(int argc, char **argv)
 	//cudaStatus = cudaMemcpy(hPos_d, hPos, sizeof(vector3) * NUMENTITIES, cudaMemcpyHostToDevice);
 
 	copy_to_device(NUMENTITIES);
+	
+	dim3 gridDim(1, 1);
+	dim3 blockDim(32, 32);
 
-	cuda_compute<<<1, 1>>>(hVel_d, hPos_d, mass_d, accels_d, 4);
+	cuda_compute<<<gridDim, blockDim>>>(hVel_d, hPos_d, mass_d, accels_d, 1);
 	compute(); //for testing one iteration of compute
 	#ifdef DEBUG
 	//printSystem(stdout);
