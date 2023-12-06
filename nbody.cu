@@ -175,7 +175,7 @@ int main(int argc, char **argv)
 	initHostMemory(NUMENTITIES);
 	planetFill();
 	randomFill(NUMPLANETS + 1, NUMASTEROIDS);
-	printf("hPos[1][0] holds %lf\n",hPos[1][0]); 
+	//printf("hPos[1][0] holds %lf\n",hPos[1][0]); 
 	//now we have a system.
 
 	cudaError_t cudaStatus;
@@ -188,6 +188,18 @@ int main(int argc, char **argv)
 
 	cuda_compute<<<gridDim, blockDim>>>(hVel_d, hPos_d, mass_d, accels_d, 1);
 	compute(); //for testing one iteration of compute
+	cuda_summation<<<1, 1>>>(hVel_d, hPos_d, accels_d);
+	
+	// copying back for serial summation (need to switch for reduction later)
+	vector3* hPos_dth = (vector3 *)malloc(sizeof(vector3) * NUMENTITIES);
+	vector3* hVel_dth = (vector3 *)malloc(sizeof(vector3) * NUMENTITIES);
+	cudaDeviceSynchronize();
+	cudaMemcpy(hPos_dth, hPos_d, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
+	cudaMemcpy(hVel_dth, hVel_d, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
+
+	printf("hPos[1][0] holds %lf\n", hPos[1][0]);
+	printf("hPos_dth[1][0] holds %lf\n", hPos_dth[1][0]); 
+	
 	#ifdef DEBUG
 	//printSystem(stdout);
 	#endif
