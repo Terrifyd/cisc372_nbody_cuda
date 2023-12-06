@@ -29,10 +29,41 @@ __global__ void cuda_compute(vector3* hVel_d,
 	//printf("thread (%i, %i)", thread_x, thread_x);
 	//d_arr[thread_x] = d_arr[thread_x] * n;
 	//printf("TEST\n");	
-	printf("hPos_d[1][0] holds %lf\n", hPos_d[1][0]);
-	FILL_VECTOR(accels_d[0][0], 1.0, 2.0, 3.0);
-	printf("%lf\n", accels_d[0][0][2]);	
-	printf("%d", NUMENTITIES);	
+	//printf("hPos_d[1][0] holds %lf\n", hPos_d[1][0]);
+	//FILL_VECTOR(accels_d[0][0], 1.0, 2.0, 3.0);
+	//printf("%lf\n", accels_d[0][0][2]);	
+	//printf("%d", NUMENTITIES);	
+	
+	int i,j,k;
+	// first compute the pairwise accelerations.  Effect is on the first argument.
+	// want to make a kernal call here?
+	for (i=0;i<NUMENTITIES;i++){
+		for (j=0;j<NUMENTITIES;j++){
+			if (i==j) {
+				FILL_VECTOR(accels_d[i][j],0,0,0);
+			}
+			else{
+				vector3 distance;
+				for (k=0;k<3;k++) distance[k]=hPos_d[i][k]-hPos_d[j][k];
+				double magnitude_sq=distance[0]*distance[0]+distance[1]*distance[1]+distance[2]*distance[2];
+				double magnitude=sqrt(magnitude_sq);
+				double accelmag=-1*GRAV_CONSTANT*mass_d[j]/magnitude_sq;
+				FILL_VECTOR(accels_d[i][j],
+					accelmag*distance[0]/magnitude,
+					accelmag*distance[1]/magnitude,
+					accelmag*distance[2]/magnitude);
+				if (i < 10 && j < 10) {
+					printf("accels_d[%d][%d] = (%lf,%lf,%lf)\n", 
+						i, 
+						j, 
+						accels_d[i][j][0], 
+						accels_d[i][j][1], 
+						accels_d[i][i][2]);
+				}	
+			}
+		}
+	}
+
 }
 
 __global__ void cuda_init_accels(vector3* values_d, vector3** accels_d, int numObjects) {
@@ -83,6 +114,14 @@ void compute(){
 				double magnitude=sqrt(magnitude_sq);
 				double accelmag=-1*GRAV_CONSTANT*mass[j]/magnitude_sq;
 				FILL_VECTOR(accels[i][j],accelmag*distance[0]/magnitude,accelmag*distance[1]/magnitude,accelmag*distance[2]/magnitude);
+				if (i < 10 && j < 10) {
+					printf("accels[%d][%d] = (%lf,%lf,%lf)\n", 
+						i, 
+						j, 
+						accels[i][j][0], 
+						accels[i][j][1], 
+						accels[i][i][2]);
+				}	
 			}
 		}
 	}

@@ -184,12 +184,12 @@ int main(int argc, char **argv)
 	copy_to_device(NUMENTITIES);
 
 	cuda_compute<<<1, 1>>>(hVel_d, hPos_d, mass_d, accels_d, 4);
-
+	compute(); //for testing one iteration of compute
 	#ifdef DEBUG
 	//printSystem(stdout);
 	#endif
 	for (t_now=0;t_now<DURATION;t_now+=INTERVAL){
-		compute();
+		//compute();
 	}
 
 
