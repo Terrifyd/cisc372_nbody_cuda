@@ -186,25 +186,32 @@ int main(int argc, char **argv)
 	dim3 gridDim(1, 1);
 	dim3 blockDim(32, 32);
 
-	cuda_compute<<<gridDim, blockDim>>>(hVel_d, hPos_d, mass_d, accels_d, 1);
-	compute(); //for testing one iteration of compute
-	cuda_summation<<<1, 1>>>(hVel_d, hPos_d, accels_d);
+
+	#ifdef DEBUG
+	//printSystem(stdout);
+	#endif
+//	for (t_now=0;t_now<DURATION;t_now+=INTERVAL){
+	int z;
+	for (z=0;z<1;z++) {
+		printf("LOOPED\n");
+		cuda_compute<<<gridDim, blockDim>>>(hVel_d, hPos_d, mass_d, accels_d, 1);
+		compute();
+		cuda_summation<<<1, 1>>>(hVel_d, hPos_d, accels_d);
 	
+	}
+
 	// copying back for serial summation (need to switch for reduction later)
 	vector3* hPos_dth = (vector3 *)malloc(sizeof(vector3) * NUMENTITIES);
 	vector3* hVel_dth = (vector3 *)malloc(sizeof(vector3) * NUMENTITIES);
 	cudaDeviceSynchronize();
 	cudaMemcpy(hPos_dth, hPos_d, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
 	cudaMemcpy(hVel_dth, hVel_d, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
+	for (int a = 0; a < 20; a++) {
+		for (int b = 0; b < 20; b++) {
 
-	printf("hPos[1][0] holds %lf\n", hPos[1][0]);
-	printf("hPos_dth[1][0] holds %lf\n", hPos_dth[1][0]); 
-	
-	#ifdef DEBUG
-	//printSystem(stdout);
-	#endif
-	for (t_now=0;t_now<DURATION;t_now+=INTERVAL){
-		//compute();
+			//printf("hPos[%d][%d] holds %lf\n", a, b, hPos[a][b]);
+			//printf("hPos_dth[%d][%d] holds %lf\n", a, b, hPos_dth[a][b]); 
+		}
 	}
 
 

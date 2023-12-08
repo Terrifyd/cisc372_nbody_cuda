@@ -40,15 +40,17 @@ __global__ void cuda_compute(vector3* hVel_d,
 	int y = threadIdx.y; // y coordinate of threa
 	int start_x = x * n;
 	int start_y = y * n;	
-
+	int end_x = start_x + n;
+	int end_y = start_y + n;
+	
 	int i,j,k;
 	i = start_x;
 	j = start_y;
 	// first compute the pairwise accelerations.  Effect is on the first argument.
 	// want to make a kernal call here?
-	if (x == 0 && y == 0) {printf("~~~ n=%d, i=%d, j=%d\n", n, i, j);} 
-	for (i; i < (start_x + n); i++){
-		for (j; j < (start_y + n); j++){
+	//if (x == 0 && y == 0) {printf("~~~ n=%d, i=%d, j=%d\n", n, i, j);} 
+	for (i; i < end_x; i++){
+		for (j; j < end_y; j++){
 			if (i==j && i < NUMENTITIES && j < NUMENTITIES) {
 				FILL_VECTOR(accels_d[i][j],0,0,0);
 			}
@@ -75,7 +77,8 @@ __global__ void cuda_compute(vector3* hVel_d,
 			}
 		}
 	}
-
+	__syncthreads();
+	printf("accels_d holds (%lf, %lf, %lf)\n", accels_d[2][4][0], accels_d[2][4][1], accels_d[2][4][2]);
 }
 
 __global__ void cuda_init_accels(vector3* values_d, vector3** accels_d, int numObjects) {
@@ -115,6 +118,7 @@ __global__ void cuda_summation(vector3* hVel_d, vector3* hPos_d, vector3** accel
 //Returns: None
 //Side Effect: Modifies the hPos and hVel arrays with the new positions and accelerations after 1 INTERVAL
 void compute(){
+	printf("COMPUTE\n");
 	//make an acceleration matrix which is NUMENTITIES squared in size;
 	// values is 1d array and accels is 2d array
 	// values is a pointer to start of an array and accels is a pointer to the pointer of values?
@@ -157,6 +161,7 @@ void compute(){
 			}
 		}
 	}
+	printf("accels holds (%lf, %lf, %lf)\n", accels[2][4][0], accels[2][4][1], accels[2][4][2]);
 
 	// sum up the rows of our matrix to get effect on each entity, then update velocity and position.
 	// want to make kernal call here?
