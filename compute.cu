@@ -77,8 +77,10 @@ __global__ void cuda_compute(vector3* hVel_d,
 			}
 		}
 	}
-	__syncthreads();
-	printf("accels_d holds (%lf, %lf, %lf)\n", accels_d[2][4][0], accels_d[2][4][1], accels_d[2][4][2]);
+	//__syncthreads();
+	//int a = 3;
+	//int b = 5;
+	//if (x==0 && y==0){printf("accels_d holds (%lf, %lf, %lf)\n", accels_d[a][b][0], accels_d[a][b][1], accels_d[a][b][2]);}
 }
 
 __global__ void cuda_init_accels(vector3* values_d, vector3** accels_d, int numObjects) {
@@ -118,7 +120,6 @@ __global__ void cuda_summation(vector3* hVel_d, vector3* hPos_d, vector3** accel
 //Returns: None
 //Side Effect: Modifies the hPos and hVel arrays with the new positions and accelerations after 1 INTERVAL
 void compute(){
-	printf("COMPUTE\n");
 	//make an acceleration matrix which is NUMENTITIES squared in size;
 	// values is 1d array and accels is 2d array
 	// values is a pointer to start of an array and accels is a pointer to the pointer of values?
@@ -161,7 +162,7 @@ void compute(){
 			}
 		}
 	}
-	printf("accels holds (%lf, %lf, %lf)\n", accels[2][4][0], accels[2][4][1], accels[2][4][2]);
+	//printf("accels holds (%lf, %lf, %lf)\n", accels[10][15][0], accels[10][15][1], accels[10][15][2]);
 
 	// sum up the rows of our matrix to get effect on each entity, then update velocity and position.
 	// want to make kernal call here?
