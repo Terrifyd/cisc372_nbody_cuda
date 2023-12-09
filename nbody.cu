@@ -192,10 +192,15 @@ int main(int argc, char **argv)
 	#endif
 	
 	int z;
-	for (t_now=0;t_now<DURATION;t_now+=INTERVAL) {
+	int n = 1;
+	while ((n * n * 1024) < (NUMENTITIES * NUMENTITIES)) { // GRID DIM IS STATICALLY DECLARED HERE (n is x/y dim of thread)
+		n++;
+	}
+	printf("N EQUALS %d\n", n);
+	for (t_now=0;t_now<(INTERVAL*5);t_now+=INTERVAL) {
 //	for (z=0;z<1000;z++) {
 		//printf("LOOPED\n");
-		cuda_compute<<<gridDim, blockDim>>>(hVel_d, hPos_d, mass_d, accels_d, 1);
+		cuda_compute<<<gridDim, blockDim>>>(hVel_d, hPos_d, mass_d, accels_d, n);
 		//compute();
 		cuda_summation<<<1, 1>>>(hVel_d, hPos_d, accels_d);
 	
@@ -215,7 +220,7 @@ int main(int argc, char **argv)
 		for (int b = 0; b < 3; b++) {
 
 			//printf("hPos[%d][%d] holds %lf\n", a, b, hPos[a][b]);
-			printf("hPos_dth[%d][%d] holds %lf\n", a, b, hPos_dth[a][b]); 
+			//printf("hPos_dth[%d][%d] holds %lf\n", a, b, hPos_dth[a][b]); 
 		}
 	}
 

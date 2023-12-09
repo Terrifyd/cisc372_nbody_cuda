@@ -77,10 +77,12 @@ __global__ void cuda_compute(vector3* hVel_d,
 			}
 		}
 	}
-	//__syncthreads();
-	//int a = 3;
-	//int b = 5;
-	//if (x==0 && y==0){printf("accels_d holds (%lf, %lf, %lf)\n", accels_d[a][b][0], accels_d[a][b][1], accels_d[a][b][2]);}
+	__syncthreads();
+	int a = 8;
+	int b = 2;
+	if (x==0 && y==0){
+		//printf("accels_d holds (%lf, %lf, %lf)\n", accels_d[a][b][0], accels_d[a][b][1], accels_d[a][b][2]);
+	}
 }
 
 __global__ void cuda_init_accels(vector3* values_d, vector3** accels_d, int numObjects) {
@@ -99,8 +101,14 @@ __global__ void cuda_summation(vector3* hVel_d, vector3* hPos_d, vector3** accel
 		vector3 accel_sum={0,0,0};
 		// sum up column
 		for (j=0;j<NUMENTITIES;j++){
+			if (i == 0) {
+				printf("accels[%d][%d] is (%.10f, %.10f, %.10f)\n", i, j, accels_d[i][j][0], accels_d[i][j][1], accels_d[i][j][2]);
+			}
 			for (k=0;k<3;k++)
 				accel_sum[k]+=accels_d[i][j][k];
+		}
+		if (i == 0) {
+			printf("~accel_sum[%d] is (%.10f, %.10f, %.10f)\n", i, accel_sum[0], accel_sum[1], accel_sum[2]);
 		}
 		//compute the new velocity based on the acceleration and time interval
 		//compute the new position based on the velocity and time interval
@@ -109,6 +117,9 @@ __global__ void cuda_summation(vector3* hVel_d, vector3* hPos_d, vector3** accel
 			hPos_d[i][k]+=hVel_d[i][k]*INTERVAL;
 		}
 	}
+	int  x = 0;
+	printf("hVel_d[%d] holds (%.10f, %.10f, %.10f)\n", x, hVel_d[x][0], hVel_d[x][1], hVel_d[x][2]);
+	printf("hPos_d[%d] holds (%.10f, %.10f, %.10f)\n\n", x, hPos_d[x][0], hPos_d[x][1], hPos_d[x][2]);
 }
 
 #ifdef __cplusplus
