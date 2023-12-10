@@ -184,7 +184,7 @@ int main(int argc, char **argv)
 
 	copy_to_device(NUMENTITIES);
 	
-	int n = 4;
+	int n = 1;
 	int dims = 1;
 	while ((dims * dims * n * n * 1024) < (NUMENTITIES * NUMENTITIES)) {
 		dims++;
@@ -226,7 +226,7 @@ int main(int argc, char **argv)
 		for (int b = 0; b < 3; b++) {
 
 			//printf("hPos[%d][%d] holds %lf\n", a, b, hPos[a][b]);
-			printf("hPos_dth[%d][%d] holds %lf\n", a, b, hPos_dth[a][b]); 
+			printf("hPos[%d][%d] holds %lf\n", a, b, hPos_dth[a][b]); 
 		}
 	}
 
