@@ -191,12 +191,11 @@ int main(int argc, char **argv)
 	//printSystem(stdout);
 	#endif
 	
-	int z;
 	int n = 1;
 	while ((n * n * 1024) < (NUMENTITIES * NUMENTITIES)) { // GRID DIM IS STATICALLY DECLARED HERE (n is x/y dim of thread)
 		n++;
 	}
-	printf("N EQUALS %d\n", n);
+	//printf("N EQUALS %d\n", n);
 	for (t_now=0;t_now<(INTERVAL*5);t_now+=INTERVAL) {
 //	for (z=0;z<1000;z++) {
 		//printf("LOOPED\n");
@@ -206,21 +205,17 @@ int main(int argc, char **argv)
 	
 	}
 
-	for (z=0;z<10;z++) {
-		//printf("LOOPED2\n");
-		//compute();	
-	}
 	// copying back for serial summation (need to switch for reduction later)
 	vector3* hPos_dth = (vector3 *)malloc(sizeof(vector3) * NUMENTITIES);
 	vector3* hVel_dth = (vector3 *)malloc(sizeof(vector3) * NUMENTITIES);
 	cudaDeviceSynchronize();
 	cudaMemcpy(hPos_dth, hPos_d, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
 	cudaMemcpy(hVel_dth, hVel_d, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
-	for (int a = 0; a < 20; a++) {
+	for (int a = 0; a < 100; a++) {
 		for (int b = 0; b < 3; b++) {
 
 			//printf("hPos[%d][%d] holds %lf\n", a, b, hPos[a][b]);
-			//printf("hPos_dth[%d][%d] holds %lf\n", a, b, hPos_dth[a][b]); 
+			printf("hPos_dth[%d][%d] holds %lf\n", a, b, hPos_dth[a][b]); 
 		}
 	}
 
