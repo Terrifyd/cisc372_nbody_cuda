@@ -105,27 +105,36 @@ __global__ void cuda_reduction(vector3* hVel_d, vector3* hPos_d, vector3** accel
 	int j = threadIdx.x;
 	int k;
 
-	int n = 0;
+	//if (j == 0) {printf("Block %d launched\n", i);}
+	int n = 1;
 	while ((n * 2) < NUMENTITIES) {
-		n++;
+		n *= 2;
 	}
 	
+	//if (i == 0 && j ==0) {printf("~~stride will be %d\n", n);}
 	//vector3 accel_sum = {0, 0, 0};
-	for (int stride = n; stride < 0; stride >>= 2) {
+	int stride;
+	for (stride = n; stride > 0; stride >>= 1) {
+		//printf("in loop");
+		//if (i == 0 && j == 0) {printf("\nstride is %d\n", stride);}
 		if (j < stride) {
 			if ((j + stride) < NUMENTITIES) {
 				for (k = 0; k < 3; k++) {
-					accels_d[i][j][k] += accels_d[i][j + stride][k];
+					//if (i == 0 && j == 0) {printf("(%f in %d added to %f in ind %d)\n", accels_d[i][j+stride][k], j+stride, accels_d[i][j][k], j);}
+					accels_d[i][j][k] += accels_d[i][j+stride][k];
 				}
 			}
 		}	
 		__syncthreads();
 	}
-
-	for (int k = 0; k < 3; k++) {
-		hVel_d[i][k] += accels_d[i][0][k] * INTERVAL;
-		hPos_d[i][k] += hVel_d[i][k] * INTERVAL;
-	}	
+	//if (i == 0 && j ==0) {printf("accel red for %d is"
+	if (j == 0) {
+		for (k = 0; k < 3; k++) {
+			//if ( i == 0 && j == 0) {printf("accel sum of %d is %f\n", k, accels_d[i][0][k]);}
+			hVel_d[i][k] += accels_d[i][0][k] * INTERVAL;
+			hPos_d[i][k] += hVel_d[i][k] * INTERVAL;
+		}	
+	}
 }
 
 // serial summation for testing (still on device to avoid unnecessary memory transfers)
