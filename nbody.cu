@@ -169,7 +169,7 @@ __global__ void cuda_test(int* deviceArray) {
 int main(int argc, char **argv)
 {
 	clock_t t0=clock();
-	clock_t t9=clock();
+	//clock_t t9=clock();
 	int t_now;
 	//srand(time(NULL));
 	srand(1234);
@@ -184,27 +184,36 @@ int main(int argc, char **argv)
 
 	copy_to_device(NUMENTITIES);
 	
-	dim3 gridDim(1, 1);
+	int n = 4;
+	int dims = 1;
+	while ((dims * dims * n * n * 1024) < (NUMENTITIES * NUMENTITIES)) {
+		dims++;
+	} 
+	dim3 gridDim(dims, dims);
 	dim3 blockDim(32, 32);
-
 
 	#ifdef DEBUG
 	//printSystem(stdout);
 	#endif
 	
-	int n = 1;
+/*
 	while ((n * n * 1024) < (NUMENTITIES * NUMENTITIES)) { // GRID DIM IS STATICALLY DECLARED HERE (n is x/y dim of thread)
 		n++;
 	}
 	printf("N EQUALS %d\n", n);
-	clock_t t2=clock()-t9;
+*/
+	clock_t c0, s0;
+	clock_t c1 = 0;
+	clock_t s1 = 0;
 	for (t_now=0;t_now<(DURATION);t_now+=INTERVAL) {
-//	for (z=0;z<1000;z++) {
-		//printf("LOOPED\n");
+		c0 = clock();
 		cuda_compute<<<gridDim, blockDim>>>(hVel_d, hPos_d, mass_d, accels_d, n);
+		c1 += clock() - c0;
 		//compute();
-		cuda_summation<<<1, 1>>>(hVel_d, hPos_d, accels_d);
-	
+		s0 = clock();
+		//cuda_summation<<<1, 1>>>(hVel_d, hPos_d, accels_d);
+		cuda_reduction<<<NUMENTITIES, 1024>>>(hVel_d, hPos_d, accels_d);
+		s1 += clock() - s0;
 	}
 
 	// copying back for serial summation (need to switch for reduction later)
@@ -307,7 +316,7 @@ int main(int argc, char **argv)
 #ifdef DEBUG
 	//printSystem(stdout);
 #endif
-	printf("Computation started at %f seconds\n", (double)t2/CLOCKS_PER_SEC);
+	printf("Computation spent %f seconds in compute and %f seconds in summation\n", (double)c1/CLOCKS_PER_SEC, (double)s1/CLOCKS_PER_SEC);
 	printf("This took a total time of %f seconds\n",(double)t1/CLOCKS_PER_SEC);
 
 	freeHostMemory();

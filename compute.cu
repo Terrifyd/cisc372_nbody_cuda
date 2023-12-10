@@ -38,8 +38,8 @@ __global__ void cuda_compute(vector3* hVel_d,
 	//printf("%lf\n", accels_d[0][0][2]);	
 	//printf("%d", NUMENTITIES);	
 	
-	int x = threadIdx.x; // x coordinate of thread
-	int y = threadIdx.y; // y coordinate of threa
+	int x = (blockIdx.x * blockDim.x) + threadIdx.x; // x coordinate of thread
+	int y = (blockIdx.y * blockDim.y) + threadIdx.y; // y coordinate of threa
 	int start_x = x * n;
 	int start_y = y * n;	
 	int end_x = start_x + n;
@@ -99,6 +99,34 @@ __global__ void cuda_init_accels(vector3* values_d, vector3** accels_d, int numO
 		accels_d[i] = &values_d[i * numObjects];
 	}
 }	
+
+__global__ void cuda_reduction(vector3* hVel_d, vector3* hPos_d, vector3** accels_d) {
+	int i = blockIdx.x;
+	int j = threadIdx.x;
+	int k;
+
+	int n = 0;
+	while ((n * 2) < NUMENTITIES) {
+		n++;
+	}
+	
+	//vector3 accel_sum = {0, 0, 0};
+	for (int stride = n; stride < 0; stride >>= 2) {
+		if (j < stride) {
+			if ((j + stride) < NUMENTITIES) {
+				for (k = 0; k < 3; k++) {
+					accels_d[i][j][k] += accels_d[i][j + stride][k];
+				}
+			}
+		}	
+		__syncthreads();
+	}
+
+	for (int k = 0; k < 3; k++) {
+		hVel_d[i][k] += accels_d[i][0][k] * INTERVAL;
+		hPos_d[i][k] += hVel_d[i][k] * INTERVAL;
+	}	
+}
 
 // serial summation for testing (still on device to avoid unnecessary memory transfers)
 __global__ void cuda_summation(vector3* hVel_d, vector3* hPos_d, vector3** accels_d) {
