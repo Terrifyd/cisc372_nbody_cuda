@@ -54,10 +54,10 @@ __global__ void cuda_compute(vector3* hVel_d,
 	//if (x == 0 && y == 0) {printf("~~~ n=%d, i=%d, j=%d\n", n, i, j);} 
 	//printf("BEFORE LOOP\n");
 	for (i = start_x; i < end_x; i++){
-		if (x == 0 && y == 0) {printf("start 1 loop\n");}
+		//if (x == 0 && y == 0) {printf("start 1 loop\n");}
 		//printf("row %d modified in thread [%d][%d]\n", i, x, y);
 		for (j = start_y; j < end_y; j++){
-			if (x == 0 && y == 0) {printf("did 2 loop i = %d - j = %d\n", i, j);} 
+			//if (x == 0 && y == 0) {printf("did 2 loop i = %d - j = %d\n", i, j);} 
 			if (i==j && i < NUMENTITIES && j < NUMENTITIES) {
 				//while (atomicExch(&mutex, 1) != 0) {/* Wait till mutex acquired */}
 				FILL_VECTOR(accels_d[i][j],0,0,0);
@@ -73,12 +73,14 @@ __global__ void cuda_compute(vector3* hVel_d,
 					accelmag*distance[0]/magnitude,
 					accelmag*distance[1]/magnitude,
 					accelmag*distance[2]/magnitude);
-				if (i == 1 && j == 0) {
+/*				if (i == 1 && j == 0) {
 					printf("in thread %d for [%d][%d] distance = (%f, %f, %f)\n", x, i, j, distance[0], distance[1], distance[2]); 
 					printf("in thread %d for [%d][%d] magnitude = %f\n", x, i, j, magnitude);
 					printf("in thread %d for [%d][%d] accelmag = %f\n", x, i, j, accelmag);
 					printf("in thread %d for [%d][%d] accels_d = (%f, %f, %f)\n\n", x, i, j, accels_d[i][j][0], accels_d[i][j][1], accels_d[i][j][2]);
+
 				}
+*/
 			}
 		}
 	}

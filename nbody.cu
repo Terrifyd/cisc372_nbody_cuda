@@ -169,6 +169,7 @@ __global__ void cuda_test(int* deviceArray) {
 int main(int argc, char **argv)
 {
 	clock_t t0=clock();
+	clock_t t9=clock();
 	int t_now;
 	//srand(time(NULL));
 	srand(1234);
@@ -195,8 +196,9 @@ int main(int argc, char **argv)
 	while ((n * n * 1024) < (NUMENTITIES * NUMENTITIES)) { // GRID DIM IS STATICALLY DECLARED HERE (n is x/y dim of thread)
 		n++;
 	}
-	//printf("N EQUALS %d\n", n);
-	for (t_now=0;t_now<(INTERVAL*5);t_now+=INTERVAL) {
+	printf("N EQUALS %d\n", n);
+	clock_t t2=clock()-t9;
+	for (t_now=0;t_now<(DURATION);t_now+=INTERVAL) {
 //	for (z=0;z<1000;z++) {
 		//printf("LOOPED\n");
 		cuda_compute<<<gridDim, blockDim>>>(hVel_d, hPos_d, mass_d, accels_d, n);
@@ -305,6 +307,7 @@ int main(int argc, char **argv)
 #ifdef DEBUG
 	//printSystem(stdout);
 #endif
+	printf("Computation started at %f seconds\n", (double)t2/CLOCKS_PER_SEC);
 	printf("This took a total time of %f seconds\n",(double)t1/CLOCKS_PER_SEC);
 
 	freeHostMemory();
