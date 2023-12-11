@@ -16,7 +16,7 @@
 //	int n - dimmensions of the section of accels_d that each thread will compute, for example if n is 3 then each thread
 //		will calculate a 3x3 box of the accels_d matrix. Each thread does nxn computations 
 //Returns: none 
-//Side Effect: modifies the hVel_d and hPos_d arrays with new velocities and positions after 1 interval
+//Side Effect: modifies the accels_d array and fills it with pairwise accelerations
 __global__ void cuda_compute(vector3* hVel_d,
 		vector3* hPos_d,
 		double* mass_d,
@@ -58,19 +58,29 @@ __global__ void cuda_init_accels(vector3* values_d, vector3** accels_d, int numO
 	for (int i = 0; i < numObjects; i++) {
 		accels_d[i] = &values_d[i * numObjects];
 	}
-}	
-
+}
+	
+//cuda_reduction: Uses rucuction to sum the accels of each object and calculate new hVel and hPos
+//Parameters:
+//	vector3* hVel_d - pointer to an array on the device that holds vector3's for each objects velocity
+//	vector3* hPos_d - pointer to an array on the device that holds vector3's for each objects position
+//	double* mass_d - pointer to an array on the device that holds the mass of each object
+//	vector3** accels_d - a pointer to a 2D array on the device that will be used to store the pairwise acceleration 
+//		of each object 
+//Returns: none 
+//Side Effect: modifies the hVel_d and hPos_d arrays with new velocities and positions after 1 interval
 __global__ void cuda_reduction(vector3* hVel_d, vector3* hPos_d, vector3** accels_d) {
 	int i = blockIdx.x;
 	int j = threadIdx.x;
 	int k;
-	bool overload = false;
+	//bool overload = false;
 		
 	int numThreads = blockDim.x;
 	int numElements = NUMENTITIES;
-	//if (i == 0 && j == 0) printf 
+
+	// for if there are too many entities for the number of threads
 	if (numElements > (numThreads * 2)) {
-		overload = true;
+		//overload = true;
 		int jump;
 		int n = 1;
 		while (numElements > (numThreads * n)) {
@@ -79,11 +89,8 @@ __global__ void cuda_reduction(vector3* hVel_d, vector3* hPos_d, vector3** accel
 
 		while (n > 2) {
 			jump = (n - 1) * 1024;
-			if (i == 0 && j == 0) {printf("n is %d and jump is %d and numElelments is %d\n", n, jump, numElements);}
 			if ((j + jump) < numElements) {
-				if (i == 0 && j == 0) {printf("THREAD ENTERED IF JUMP < NUMELS LOOP\n");} 
-				for (k = 0; k < 3; k++) {
-					if (i == 0 and j == 0) {printf("thread %d adding ind %d to ind %d\n", j, j+jump, j);}  	
+				for (k = 0; k < 3; k++) {  	
 					accels_d[i][j][k] += accels_d[i][j+jump][k];		
 				}
 			}
@@ -91,7 +98,6 @@ __global__ void cuda_reduction(vector3* hVel_d, vector3* hPos_d, vector3** accel
 			numElements = jump;
 			__syncthreads();
 		}
-		if (i == 0 && j == 0) {printf("numElements is %d\n\n", numElements);}
 	}
 	
 	// thread j will add the elements of index j and j + stride together, dividing stride by 2 each time
@@ -100,7 +106,7 @@ __global__ void cuda_reduction(vector3* hVel_d, vector3* hPos_d, vector3** accel
 	while ((stride * 2) < numElements) {
 		stride *= 2;
 	}
-	if (i == 0 && j == 0) {printf("STRIDE IS %d\n\n", stride);}
+	//if (i == 0 && j == 0) {printf("STRIDE IS %d\n\n", stride);}
 	while (stride > 0) {
 		//printf("in loop");
 		//if (i == 0 && j == 0) {printf("\nstride is %d\n", stride);}
@@ -124,12 +130,7 @@ __global__ void cuda_reduction(vector3* hVel_d, vector3* hPos_d, vector3** accel
 		for (k = 0; k < 3; k++) {
 			//if ( i == 0 && j == 0) {printf("accel sum of %d is %f\n", k, accels_d[i][0][k]);}
 			hVel_d[i][k] += accels_d[i][0][k] * INTERVAL;
-			if (overload) {
-				hPos_d[i][k] += hVel_d[i][k] * INTERVAL;
-			}
-			else {
-				hPos_d[i][k] += hVel_d[i][k] * INTERVAL;
-			}
+			hPos_d[i][k] += hVel_d[i][k] * INTERVAL;
 		}	
 	}
 	if (i == 9 && j == 0) {
