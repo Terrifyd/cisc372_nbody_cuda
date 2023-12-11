@@ -106,14 +106,11 @@ __global__ void cuda_reduction(vector3* hVel_d, vector3* hPos_d, vector3** accel
 	while ((stride * 2) < numElements) {
 		stride *= 2;
 	}
-	//if (i == 0 && j == 0) {printf("STRIDE IS %d\n\n", stride);}
+
 	while (stride > 0) {
-		//printf("in loop");
-		//if (i == 0 && j == 0) {printf("\nstride is %d\n", stride);}
 		if (j < stride) {
 			if ((j + stride) < numElements) {
-				for (k = 0; k < 3; k++) {
-					//if (i == 0 && j == 0) {printf("(%f in %d added to %f in ind %d)\n", accels_d[i][j+stride][k], j+stride, accels_d[i][j][k], j);}
+				for (k = 0; k < 3; k++) {	
 					accels_d[i][j][k] += accels_d[i][j+stride][k];
 				}
 			}
@@ -122,23 +119,16 @@ __global__ void cuda_reduction(vector3* hVel_d, vector3* hPos_d, vector3** accel
 		stride >>= 1;
 	}
 	
-	if (i == 9 && j == 0) {
-		//printf("accel sums of %d are (%f, %f, %f)\n", i, accels_d[i][0][0], accels_d[i][0][1], accels_d[i][0][2]);
-	}
-	//if (i == 0 && j ==0) {printf("accel red for %d is"
 	if (j == 0) {
 		for (k = 0; k < 3; k++) {
-			//if ( i == 0 && j == 0) {printf("accel sum of %d is %f\n", k, accels_d[i][0][k]);}
 			hVel_d[i][k] += accels_d[i][0][k] * INTERVAL;
 			hPos_d[i][k] += hVel_d[i][k] * INTERVAL;
 		}	
 	}
-	if (i == 9 && j == 0) {
-		//printf("hPos is (%f, %f, %f)\n", hPos_d[i][0], hPos_d[i][1], hPos_d[i][2]);
-	}
 }
 
-// serial summation for testing (still on device to avoid unnecessary memory transfers)
+
+// serial summation only for testing (still on device to avoid unnecessary memory transfers)
 __global__ void cuda_summation(vector3* hVel_d, vector3* hPos_d, vector3** accels_d) {
 	int i, j, k;
 

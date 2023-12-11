@@ -204,19 +204,9 @@ int main(int argc, char **argv)
 		//s1 += clock() - s0;
 	}
 
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	cudaMemcpy(hPos, hPos_d, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
 	cudaMemcpy(hVel, hVel_d, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
-/*
-	for (int a = 0; a < 100; a++) {
-		for (int b = 0; b < 3; b++) {
-
-			//printf("hPos[%d][%d] holds %lf\n", a, b, hPos[a][b]);
-			//printf("hPos[%d][%d] holds %lf\n", a, b, hPos_dth[a][b]); 
-		}
-	}
-*/
-
 
 	clock_t t1=clock()-t0;
 #ifdef DEBUG
