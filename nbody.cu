@@ -176,11 +176,10 @@ int main(int argc, char **argv)
 	initHostMemory(NUMENTITIES);
 	planetFill();
 	randomFill(NUMPLANETS + 1, NUMASTEROIDS);
-	//printf("hPos[1][0] holds %lf\n",hPos[1][0]); 
 	//now we have a system.
-
-	cudaError_t cudaStatus;
-	//cudaStatus = cudaMemcpy(hPos_d, hPos, sizeof(vector3) * NUMENTITIES, cudaMemcpyHostToDevice);
+#ifdef DEBUG
+	//printSystem(stdout);
+#endif
 
 	copy_to_device(NUMENTITIES);
 	
@@ -191,25 +190,14 @@ int main(int argc, char **argv)
 	} 
 	dim3 gridDim(dims, dims);
 	dim3 blockDim(32, 32);
-
-	#ifdef DEBUG
-	//printSystem(stdout);
-	#endif
 	
-/*
-	while ((n * n * 1024) < (NUMENTITIES * NUMENTITIES)) { // GRID DIM IS STATICALLY DECLARED HERE (n is x/y dim of thread)
-		n++;
-	}
-	printf("N EQUALS %d\n", n);
-*/
 	clock_t c0, s0;
 	clock_t c1 = 0;
 	clock_t s1 = 0;
-	for (t_now=0;t_now<(DURATION);t_now+=INTERVAL) {
+	for (t_now=0;t_now<(INTERVAL*5);t_now+=INTERVAL) {
 		c0 = clock();
 		cuda_compute<<<gridDim, blockDim>>>(hVel_d, hPos_d, mass_d, accels_d, n);
 		c1 += clock() - c0;
-		//compute();
 		s0 = clock();
 		//cuda_summation<<<1, 1>>>(hVel_d, hPos_d, accels_d);
 		cuda_reduction<<<NUMENTITIES, 1024>>>(hVel_d, hPos_d, accels_d);
@@ -220,103 +208,25 @@ int main(int argc, char **argv)
 	vector3* hPos_dth = (vector3 *)malloc(sizeof(vector3) * NUMENTITIES);
 	vector3* hVel_dth = (vector3 *)malloc(sizeof(vector3) * NUMENTITIES);
 	cudaDeviceSynchronize();
-	cudaMemcpy(hPos_dth, hPos_d, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
-	cudaMemcpy(hVel_dth, hVel_d, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
+	cudaMemcpy(hPos, hPos_d, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
+	cudaMemcpy(hVel, hVel_d, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
+/*
 	for (int a = 0; a < 100; a++) {
 		for (int b = 0; b < 3; b++) {
 
 			//printf("hPos[%d][%d] holds %lf\n", a, b, hPos[a][b]);
-			printf("hPos[%d][%d] holds %lf\n", a, b, hPos_dth[a][b]); 
+			//printf("hPos[%d][%d] holds %lf\n", a, b, hPos_dth[a][b]); 
 		}
 	}
-
-
-/*
-	int one = 1;
-	dim3 dimGrid, dimBlock;
-	dimGrid.x = 1;
-	dimGrid.y = 1;
-	dimGrid.z = 1;
-	dimBlock.x = 32;
-	dimBlock.y = 32;
-	dimBlock.z = 1;
-	//cuda_compute<<<dimGrid, dimBlock>>>(4);	
-	
-	printf("start test\n");
-	int* h_arr;
-	int* d_arr;
-
-	h_arr = (int*)malloc(20 * sizeof(int));
-	for (int i=0; i < 20; i++) {
-		h_arr[i] = i;
-	}
-	
-	cudaMalloc((void**)&d_arr, 20 * sizeof(int));
-	cudaError_t cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
-	}
-
-	cudaMemcpy(d_arr, h_arr, 20 * sizeof(int), cudaMemcpyHostToDevice);
-	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
-	}
-
-	cuda_compute<<<1,20>>>(d_arr, 4);
-	//nothing_test();
-
-	cudaMemcpy(h_arr, d_arr, 20 * sizeof(int), cudaMemcpyDeviceToHost);
-	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
-	}
-
-	for (int i = 0; i < 20; i++) {
-		printf("Post kernal value at h_arr[%d] is %d\n", i, h_arr[i]);
-	}
-
-	free(h_arr);
-	cudaFree(d_arr);
-
-	printf("done test\n");		
-	return 0;
 */
 
-/*
-	size_t size_c = 256 * sizeof(int);
-	int size = 256 * sizeof(int);
-	//int *hostArray = new int[10];
-	int* hostArray = (int*)malloc(2 * size);
-
-	int* deviceArray;
-	cudaMalloc((void**)&deviceArray, size_c);
-	cudaError_t cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
-	}
-
-
-	hostArray[0] = 1;
-	printf("~~~Host has %d at 0~~~\n", hostArray[0]);	
-	cuda_test<<<1, 256>>>(deviceArray);
-	cudaDeviceSynchronize();
-	
-	printf("before memcpy\n");
-	cudaMemcpy(hostArray, deviceArray, size_c, cudaMemcpyDeviceToHost);
-	printf("after memcpy\n");
-	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed : %s\n", cudaGetErrorString(cudaStatus));
-	}
-	printf("~~~Host recived %d at 0~~~\n", hostArray[0]);	
-*/
 
 	clock_t t1=clock()-t0;
 #ifdef DEBUG
-	//printSystem(stdout);
+	printSystem(stdout);
 #endif
-	printf("Computation spent %f seconds in compute and %f seconds in summation\n", (double)c1/CLOCKS_PER_SEC, (double)s1/CLOCKS_PER_SEC);
+	printf("Computation spent %f seconds in compute and %f seconds in reduction\n", 
+		(double)c1/CLOCKS_PER_SEC, (double)s1/CLOCKS_PER_SEC);
 	printf("This took a total time of %f seconds\n",(double)t1/CLOCKS_PER_SEC);
 
 	freeHostMemory();

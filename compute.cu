@@ -6,12 +6,6 @@
 #include "vector.h"
 #include "config.h"
 
-#ifdef __cplusplus
-//extern "C" {
-#endif
-
-__device__ int mutex; // Global Memory Mutex
-
 //cuda_compute: Calculates the accels of object in the system on the gpu using cuda
 //Parameters:
 //	vector3* hVel_d - pointer to an array on the device that holds vector3's for each objects velocity
@@ -28,40 +22,21 @@ __global__ void cuda_compute(vector3* hVel_d,
 		double* mass_d,
 		vector3** accels_d, 
 		int n) {
-	//int thread_x = threadIdx.x;
-	//int thread_y = threadIdx.y;
-	//printf("thread (%i, %i)", thread_x, thread_x);
-	//d_arr[thread_x] = d_arr[thread_x] * n;
-	//printf("TEST\n");	
-	//printf("hPos_d[1][0] holds %lf\n", hPos_d[1][0]);
-	//FILL_VECTOR(accels_d[0][0], 1.0, 2.0, 3.0);
-	//printf("%lf\n", accels_d[0][0][2]);	
-	//printf("%d", NUMENTITIES);	
-	
-	int x = (blockIdx.x * blockDim.x) + threadIdx.x; // x coordinate of thread
-	int y = (blockIdx.y * blockDim.y) + threadIdx.y; // y coordinate of threa
-	int start_x = x * n;
+
+	// Unique (x,y) coordinate of the thread
+	int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+	int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+	// x and y coordinates in accels where the thread will start and stop computing (based on n)
+	int start_x = x * n; 
 	int start_y = y * n;	
 	int end_x = start_x + n;
 	int end_y = start_y + n;
-	//if (x == 0) {printf("start_x = %d\n end_x = %d\n", start_x, end_x);}	
+	
 	int i,j,k;
-	//i = start_x;
-	//j = start_y;
-	//if (i == 1) {printf("Thead[%d][%d] launched\n", x, y);}
-	// first compute the pairwise accelerations.  Effect is on the first argument.
-	// want to make a kernal call here?
-	//if (x == 0 && y == 0) {printf("~~~ n=%d, i=%d, j=%d\n", n, i, j);} 
-	//printf("BEFORE LOOP\n");
 	for (i = start_x; i < end_x; i++){
-		//if (x == 0 && y == 0) {printf("start 1 loop\n");}
-		//printf("row %d modified in thread [%d][%d]\n", i, x, y);
 		for (j = start_y; j < end_y; j++){
-			//if (x == 0 && y == 0) {printf("did 2 loop i = %d - j = %d\n", i, j);} 
 			if (i==j && i < NUMENTITIES && j < NUMENTITIES) {
-				//while (atomicExch(&mutex, 1) != 0) {/* Wait till mutex acquired */}
 				FILL_VECTOR(accels_d[i][j],0,0,0);
-				//atomicExch(&mutex, 0);
 			}
 			else if(i < NUMENTITIES && j < NUMENTITIES) {
 				vector3 distance;
@@ -73,25 +48,10 @@ __global__ void cuda_compute(vector3* hVel_d,
 					accelmag*distance[0]/magnitude,
 					accelmag*distance[1]/magnitude,
 					accelmag*distance[2]/magnitude);
-/*				if (i == 1 && j == 0) {
-					printf("in thread %d for [%d][%d] distance = (%f, %f, %f)\n", x, i, j, distance[0], distance[1], distance[2]); 
-					printf("in thread %d for [%d][%d] magnitude = %f\n", x, i, j, magnitude);
-					printf("in thread %d for [%d][%d] accelmag = %f\n", x, i, j, accelmag);
-					printf("in thread %d for [%d][%d] accels_d = (%f, %f, %f)\n\n", x, i, j, accels_d[i][j][0], accels_d[i][j][1], accels_d[i][j][2]);
 
-				}
-*/
 			}
 		}
 	}
-/*
-	__syncthreads();
-	int a = 8;
-	int b = 2;
-	if (x==0 && y==0){
-		//printf("accels_d holds (%lf, %lf, %lf)\n", accels_d[a][b][0], accels_d[a][b][1], accels_d[a][b][2]);
-	}
-*/
 }
 
 __global__ void cuda_init_accels(vector3* values_d, vector3** accels_d, int numObjects) {
@@ -104,21 +64,48 @@ __global__ void cuda_reduction(vector3* hVel_d, vector3* hPos_d, vector3** accel
 	int i = blockIdx.x;
 	int j = threadIdx.x;
 	int k;
+	bool overload = false;
+		
+	int numThreads = blockDim.x;
+	int numElements = NUMENTITIES;
+	//if (i == 0 && j == 0) printf 
+	if (numElements > (numThreads * 2)) {
+		overload = true;
+		int jump;
+		int n = 1;
+		while (numElements > (numThreads * n)) {
+			n++;
+		}
 
-	//if (j == 0) {printf("Block %d launched\n", i);}
-	int n = 1;
-	while ((n * 2) < NUMENTITIES) {
-		n *= 2;
+		while (n > 2) {
+			jump = (n - 1) * 1024;
+			if (i == 0 && j == 0) {printf("n is %d and jump is %d and numElelments is %d\n", n, jump, numElements);}
+			if ((j + jump) < numElements) {
+				if (i == 0 && j == 0) {printf("THREAD ENTERED IF JUMP < NUMELS LOOP\n");} 
+				for (k = 0; k < 3; k++) {
+					if (i == 0 and j == 0) {printf("thread %d adding ind %d to ind %d\n", j, j+jump, j);}  	
+					accels_d[i][j][k] += accels_d[i][j+jump][k];		
+				}
+			}
+			n--;
+			numElements = jump;
+			__syncthreads();
+		}
+		if (i == 0 && j == 0) {printf("numElements is %d\n\n", numElements);}
 	}
 	
-	//if (i == 0 && j ==0) {printf("~~stride will be %d\n", n);}
-	//vector3 accel_sum = {0, 0, 0};
-	int stride;
-	for (stride = n; stride > 0; stride >>= 1) {
+	// thread j will add the elements of index j and j + stride together, dividing stride by 2 each time
+	// because of this stride should not be greater than the number of threads 
+	int stride = 1;
+	while ((stride * 2) < numElements) {
+		stride *= 2;
+	}
+	if (i == 0 && j == 0) {printf("STRIDE IS %d\n\n", stride);}
+	while (stride > 0) {
 		//printf("in loop");
 		//if (i == 0 && j == 0) {printf("\nstride is %d\n", stride);}
 		if (j < stride) {
-			if ((j + stride) < NUMENTITIES) {
+			if ((j + stride) < numElements) {
 				for (k = 0; k < 3; k++) {
 					//if (i == 0 && j == 0) {printf("(%f in %d added to %f in ind %d)\n", accels_d[i][j+stride][k], j+stride, accels_d[i][j][k], j);}
 					accels_d[i][j][k] += accels_d[i][j+stride][k];
@@ -126,14 +113,27 @@ __global__ void cuda_reduction(vector3* hVel_d, vector3* hPos_d, vector3** accel
 			}
 		}	
 		__syncthreads();
+		stride >>= 1;
+	}
+	
+	if (i == 9 && j == 0) {
+		//printf("accel sums of %d are (%f, %f, %f)\n", i, accels_d[i][0][0], accels_d[i][0][1], accels_d[i][0][2]);
 	}
 	//if (i == 0 && j ==0) {printf("accel red for %d is"
 	if (j == 0) {
 		for (k = 0; k < 3; k++) {
 			//if ( i == 0 && j == 0) {printf("accel sum of %d is %f\n", k, accels_d[i][0][k]);}
 			hVel_d[i][k] += accels_d[i][0][k] * INTERVAL;
-			hPos_d[i][k] += hVel_d[i][k] * INTERVAL;
+			if (overload) {
+				hPos_d[i][k] += hVel_d[i][k] * INTERVAL;
+			}
+			else {
+				hPos_d[i][k] += hVel_d[i][k] * INTERVAL;
+			}
 		}	
+	}
+	if (i == 9 && j == 0) {
+		//printf("hPos is (%f, %f, %f)\n", hPos_d[i][0], hPos_d[i][1], hPos_d[i][2]);
 	}
 }
 
@@ -172,78 +172,6 @@ __global__ void cuda_summation(vector3* hVel_d, vector3* hPos_d, vector3** accel
 	printf("hVel_d[%d] holds (%.10f, %.10f, %.10f)\n", x, hVel_d[x][0], hVel_d[x][1], hVel_d[x][2]);
 	printf("hPos_d[%d] holds (%.10f, %.10f, %.10f)\n\n", x, hPos_d[x][0], hPos_d[x][1], hPos_d[x][2]);
 */
-}
-
-#ifdef __cplusplus
-//}
-#endif
-
-//compute: Updates the positions and locations of the objects in the system based on gravity.
-//Parameters: None
-//Returns: None
-//Side Effect: Modifies the hPos and hVel arrays with the new positions and accelerations after 1 INTERVAL
-void compute(){
-	//make an acceleration matrix which is NUMENTITIES squared in size;
-	// values is 1d array and accels is 2d array
-	// values is a pointer to start of an array and accels is a pointer to the pointer of values?
-	// need both on device memory or maybe redo into one memory allocation
-	// accels is the array that matters, it is a 2d array of vectors and each vector has 3 elements
-	// accels[i][j][k] points to element [k] of the vector at [i][j]
-	int i,j,k;
-	
-/*
-	vector3* values=(vector3*)malloc(sizeof(vector3)*NUMENTITIES*NUMENTITIES);
-	vector3** accels=(vector3**)malloc(sizeof(vector3*)*NUMENTITIES);
-	for (i=0;i<NUMENTITIES;i++)
-		accels[i]=&values[i*NUMENTITIES];
-*/
-
-	// first compute the pairwise accelerations.  Effect is on the first argument.
-	// want to make a kernal call here?
-	for (i=0;i<NUMENTITIES;i++){
-		for (j=0;j<NUMENTITIES;j++){
-			if (i==j) {
-				FILL_VECTOR(accels[i][j],0,0,0);
-			}
-			else{
-				vector3 distance;
-				for (k=0;k<3;k++) distance[k]=hPos[i][k]-hPos[j][k];
-				double magnitude_sq=distance[0]*distance[0]+distance[1]*distance[1]+distance[2]*distance[2];
-				double magnitude=sqrt(magnitude_sq);
-				double accelmag=-1*GRAV_CONSTANT*mass[j]/magnitude_sq;
-				FILL_VECTOR(accels[i][j],accelmag*distance[0]/magnitude,accelmag*distance[1]/magnitude,accelmag*distance[2]/magnitude);
-/*
-				if (i < 10 && j < 10) {
-					printf("accels[%d][%d] = (%lf,%lf,%lf)\n", 
-						i, 
-						j, 
-						accels[i][j][0], 
-						accels[i][j][1], 
-						accels[i][j][2]);
-				}	
-*/
-			}
-		}
-	}
-	//printf("accels holds (%lf, %lf, %lf)\n", accels[10][15][0], accels[10][15][1], accels[10][15][2]);
-
-	// sum up the rows of our matrix to get effect on each entity, then update velocity and position.
-	// want to make kernal call here?
-	for (i=0;i<NUMENTITIES;i++){
-		vector3 accel_sum={0,0,0};
-		for (j=0;j<NUMENTITIES;j++){
-			for (k=0;k<3;k++)
-				accel_sum[k]+=accels[i][j][k];
-		}
-		//compute the new velocity based on the acceleration and time interval
-		//compute the new position based on the velocity and time interval
-		for (k=0;k<3;k++){
-			hVel[i][k]+=accel_sum[k]*INTERVAL;
-			hPos[i][k]+=hVel[i][k]*INTERVAL;
-		}
-	}
-	//free(accels);
-	//free(values);
 }
 
 
